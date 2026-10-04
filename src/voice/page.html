@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyBuddy — Voice Input</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0f0f1a;
+      color: #e5e7eb;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .bg-glow {
+      position: fixed;
+      width: 400px; height: 400px;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.3;
+      pointer-events: none;
+    }
+    .glow-1 { top: -100px; left: -100px; background: #6C63FF; }
+    .glow-2 { bottom: -100px; right: -100px; background: #00D9FF; }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      max-width: 560px;
+      width: 100%;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #6C63FF, #00D9FF);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: #6B7280;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+
+    .mic-btn {
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      border: 3px solid #6C63FF;
+      background: rgba(108, 99, 255, 0.1);
+      color: #e5e7eb;
+      font-size: 2.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .mic-btn:hover {
+      background: rgba(108, 99, 255, 0.2);
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(108, 99, 255, 0.3);
+    }
+
+    .mic-btn.recording {
+      border-color: #FF5252;
+      background: rgba(255, 82, 82, 0.15);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.4); }
+      50% { box-shadow: 0 0 0 20px rgba(255, 82, 82, 0); }
+    }
+
+    .status {
+      margin-top: 1.5rem;
+      font-size: 0.95rem;
+      color: #A78BFA;
+      min-height: 1.5em;
+    }
+
+    .transcript-box {
+      margin-top: 1.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: left;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .transcript-box.visible { display: block; }
+
+    .interim { color: #6B7280; font-style: italic; }
+
+    .actions {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 0.6rem 1.5rem;
+      border-radius: 8px;
+      border: none;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6C63FF, #00D9FF);
+      color: #fff;
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #e5e7eb;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.12); }
+
+    .unsupported {
+      background: rgba(255, 82, 82, 0.1);
+      border: 1px solid rgba(255, 82, 82, 0.3);
+      border-radius: 12px;
+      padding: 1.5rem;
+      color: #FF5252;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-glow glow-1"></div>
+  <div class="bg-glow glow-2"></div>
+
+  <div class="container" id="app">
+    <h1>🎤 StudyBuddy Voice Input</h1>
+    <p class="subtitle">Speak your notes — we'll turn them into flashcards</p>
+
+    <div id="supported">
+      <button class="mic-btn" id="micBtn" onclick="toggleRecording()">🎙️</button>
+      <p class="status" id="status">Tap the microphone to start</p>
+
+      <div class="transcript-box" id="transcriptBox">
+        <span id="finalText"></span>
+        <span id="interimText" class="interim"></span>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+        <button class="btn btn-primary" id="sendBtn" onclick="sendTranscript()" disabled>
+          Send to StudyBuddy
+        </button>
+      </div>
+    </div>
+
+    <div id="unsupported" class="unsupported" style="display:none;">
+      <p><strong>Speech Recognition Not Supported</strong></p>
+      <p style="margin-top:0.5rem; color:#e5e7eb;">
+        Please use Chrome or Edge to enable voice input.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      document.getElementById('supported').style.display = 'none';
+      document.getElementById('unsupported').style.display = 'block';
+    }
+
+    let recognition;
+    let isRecording = false;
+    let finalTranscript = '';
+
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + ' ';
+          } else {
+            interim += transcript;
+          }
+        }
+        document.getElementById('finalText').textContent = finalTranscript;
+        document.getElementById('interimText').textContent = interim;
+        document.getElementById('transcriptBox').classList.add('visible');
+        document.getElementById('sendBtn').disabled = !finalTranscript.trim();
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech error:', event.error);
+        document.getElementById('status').textContent = `Error: ${event.error}`;
+        stopRecording();
+      };
+
+      recognition.onend = () => {
+        if (isRecording) {
+          recognition.start(); // auto-restart
+        }
+      };
+    }
+
+    function toggleRecording() {
+      if (isRecording) {
+        stopRecording();
+      } else {
+        startRecording();
+      }
+    }
+
+    function startRecording() {
+      isRecording = true;
+      recognition.start();
+      document.getElementById('micBtn').classList.add('recording');
+      document.getElementById('status').textContent = 'Listening... speak your notes';
+    }
+
+    function stopRecording() {
+      isRecording = false;
+      recognition.stop();
+      document.getElementById('micBtn').classList.remove('recording');
+      document.getElementById('status').textContent = finalTranscript
+        ? 'Recording stopped. Review and send your notes.'
+        : 'Tap the microphone to start';
+    }
+
+    function clearAll() {
+      finalTranscript = '';
+      document.getElementById('finalText').textContent = '';
+      document.getElementById('interimText').textContent = '';
+      document.getElementById('transcriptBox').classList.remove('visible');
+      document.getElementById('sendBtn').disabled = true;
+      document.getElementById('status').textContent = 'Tap the microphone to start';
+    }
+
+    async function sendTranscript() {
+      if (!finalTranscript.trim()) return;
+
+      const btn = document.getElementById('sendBtn');
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+
+      try {
+        const port = new URLSearchParams(window.location.search).get('port') || '0';
+        const res = await fetch(`http://localhost:${port}/transcript`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: finalTranscript.trim() }),
+        });
+
+        if (res.ok) {
+          btn.textContent = 'Sent! ✔';
+          document.getElementById('status').textContent =
+            'Notes received! You can close this tab and return to the terminal.';
+          setTimeout(() => window.close(), 2000);
+        } else {
+          throw new Error('Server error');
+        }
+      } catch (err) {
+        btn.textContent = 'Send to StudyBuddy';
+        btn.disabled = false;
+        document.getElementById('status').textContent =
+          'Could not reach StudyBuddy. Is the CLI still running?';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "studybuddy-cli",
+  "version": "1.0.0",
+  "description": "AI-powered study buddy CLI with spaced repetition, powered by Ollama — runs 100% locally",
+  "type": "module",
+  "bin": {
+    "studybuddy": "./bin/studybuddy.js"
+  },
+  "scripts": {
+    "start": "node bin/studybuddy.js",
+    "dev": "node bin/studybuddy.js"
+  },
+  "keywords": ["study", "flashcards", "spaced-repetition", "ollama", "ai", "cli", "education"],
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "cli-table3": "^0.6.5",
+    "commander": "^12.1.0",
+    "figlet": "^1.8.0",
+    "gradient-string": "^3.0.0",
+    "@inquirer/prompts": "^7.0.0",
+    "nanospinner": "^1.2.2",
+    "ora": "^8.1.0",
+    "pdf-parse": "^1.1.1"
+  }
+}
